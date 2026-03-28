@@ -11,7 +11,7 @@ COPY --from=aws-lambda-adapter /lambda-adapter /opt/extensions/lambda-adapter
 WORKDIR /var/task
 
 # Copy package files first to leverage Docker layer caching
-COPY package.json bun.lockb ./
+COPY package.json bun.lock ./
 
 # Install dependencies (production only)
 RUN bun install --production --frozen-lockfile
