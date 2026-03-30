@@ -117,7 +117,7 @@ export const biodataList: Biodata[] = [
       "Fokus pada pengembangan antarmuka pengguna dan memastikan pengalaman navigasi yang mulus.",
     photo:
       "https://images.pexels.com/photos/1036622/pexels-photo-1036622.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&dpr=1&crop=faces&fit=crop&facepad=2&sat=-100",
-    email: "anggota2@example.com",
+    email: "putriihmdh@gmail.com",
     linkedin: "https://linkedin.com/",
     github: "https://github.com/",
     downloadCv: "https://drive.google.com/",

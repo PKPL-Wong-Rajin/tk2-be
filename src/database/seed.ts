@@ -20,7 +20,23 @@ async function main() {
         portofolio: data.portofolio,
         skills: data.skills,
         style: data.style,
-      }).onConflictDoNothing();
+      }).onConflictDoUpdate({
+        target: biodatas.id,
+        set: {
+          alias: data.alias,
+          name: data.name,
+          npm: data.npm,
+          description: data.description,
+          photo: data.photo,
+          email: data.email,
+          linkedin: data.linkedin,
+          github: data.github,
+          downloadCv: data.downloadCv,
+          portofolio: data.portofolio,
+          skills: data.skills,
+          style: data.style,
+        },
+      });
     }
     console.log("Seeding complete!");
   } catch (err) {
