@@ -1,18 +1,20 @@
 import { Elysia, t, status } from "elysia";
-import { biodataList } from "./data";
 import { jwtPlugin } from "../../plugins/jwt";
+import { db } from "../../database";
+import { biodatas } from "../../database/schema";
+import { eq } from "drizzle-orm";
 import {
   BiodataResponse,
   EditBiodataBody,
-  type EditBiodataBody as EditBiodataBodyType,
 } from "./model";
 
 export const biodataController = new Elysia({ prefix: "/biodata" })
   .use(jwtPlugin)
   .get(
     "/",
-    () => {
-      return biodataList;
+    async () => {
+      const results = await db.select().from(biodatas);
+      return results;
     },
     {
       response: {
@@ -22,8 +24,8 @@ export const biodataController = new Elysia({ prefix: "/biodata" })
   )
   .get(
     "/:id",
-    ({ params: { id } }) => {
-      const biodata = biodataList.find((b) => b.id === id);
+    async ({ params: { id } }) => {
+      const [biodata] = await db.select().from(biodatas).where(eq(biodatas.id, id)).limit(1);
       if (!biodata) return status(404, { message: "Biodata not found" });
 
       return biodata;
@@ -43,10 +45,10 @@ export const biodataController = new Elysia({ prefix: "/biodata" })
     async ({ params: { id }, body, jwt, cookie: { auth } }) => {
       if (!auth.value) return status(401, { message: "Authentication required" });
 
-      const payload = await jwt.verify(auth.value);
+      const payload = await jwt.verify(auth.value as string);
       if (!payload) return status(401, { message: "Invalid or expired token" });
 
-      const biodata = biodataList.find((b) => b.id === id);
+      const [biodata] = await db.select().from(biodatas).where(eq(biodatas.id, id)).limit(1);
       if (!biodata) return status(404, { message: "Biodata not found" });
 
       if (payload.email !== biodata.email) {
@@ -55,9 +57,28 @@ export const biodataController = new Elysia({ prefix: "/biodata" })
         });
       }
 
-      applyBiodataEdits(biodata, body);
+      const updateData: Partial<typeof biodatas.$inferInsert> = {};
+      if (body.name !== undefined) updateData.name = body.name;
+      if (body.npm !== undefined) updateData.npm = body.npm;
+      if (body.description !== undefined) updateData.description = body.description;
+      if (body.photo !== undefined) updateData.photo = body.photo;
+      if (body.email !== undefined) updateData.email = body.email;
+      if (body.linkedin !== undefined) updateData.linkedin = body.linkedin;
+      if (body.github !== undefined) updateData.github = body.github;
+      if (body.downloadCv !== undefined) updateData.downloadCv = body.downloadCv;
+      if (body.portofolio !== undefined) updateData.portofolio = body.portofolio;
+      if (body.skills !== undefined) updateData.skills = body.skills;
 
-      return biodata;
+      if (body.style) {
+        updateData.style = { ...biodata.style, ...body.style };
+      }
+
+      if (Object.keys(updateData).length > 0) {
+        await db.update(biodatas).set(updateData).where(eq(biodatas.id, id));
+      }
+
+      const [updatedBiodata] = await db.select().from(biodatas).where(eq(biodatas.id, id)).limit(1);
+      return updatedBiodata;
     },
     {
       params: t.Object({
@@ -72,26 +93,3 @@ export const biodataController = new Elysia({ prefix: "/biodata" })
       },
     },
   );
-
-function applyBiodataEdits(
-  biodata: (typeof biodataList)[number],
-  body: EditBiodataBodyType,
-): void {
-  if (body.name !== undefined) biodata.name = body.name;
-  if (body.npm !== undefined) biodata.npm = body.npm;
-  if (body.description !== undefined) biodata.description = body.description;
-  if (body.photo !== undefined) biodata.photo = body.photo;
-  if (body.email !== undefined) biodata.email = body.email;
-  if (body.linkedin !== undefined) biodata.linkedin = body.linkedin;
-  if (body.github !== undefined) biodata.github = body.github;
-  if (body.downloadCv !== undefined) biodata.downloadCv = body.downloadCv;
-  if (body.portofolio !== undefined) biodata.portofolio = body.portofolio;
-  if (body.skills !== undefined) biodata.skills = body.skills;
-
-  if (body.style) {
-    if (body.style.lightColor !== undefined) biodata.style.lightColor = body.style.lightColor;
-    if (body.style.darkColor !== undefined) biodata.style.darkColor = body.style.darkColor;
-    if (body.style.fontFamily !== undefined) biodata.style.fontFamily = body.style.fontFamily;
-    if (body.style.bgColor !== undefined) biodata.style.bgColor = body.style.bgColor;
-  }
-}
